@@ -11,7 +11,9 @@ Estimations are obtained by maximisation of a spectral equivalent of the log-lik
 
 ## Functions in ```spectral_functions.py```
 The functions ```spectral_log_likelihood``` and ```spectral_log_likelihood_grad``` are implemented as general expressions dependent on a function (parameter f) which computes the spectral density of a point process. 
+
 The ```periodogram``` is a quantity that can be precomputed in order to accelerate the estimation, as this quantity is not dependent on the type of point processes. All implementation of the spectral log-likelihood take directly the periodogram as a parameter.
+
 The implemented spectral density functions correspond to the exponential kernel function $h(t) = \alpha \beta \exp^{-\beta t}$ for $t>0$.
 
 ## Example
