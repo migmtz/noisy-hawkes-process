@@ -144,20 +144,18 @@ def multivariate_spectral_noised_trinf(w, theta):
 #########################
 
 
-def spectral_log_likelihood(theta, f, M, tList):
+def spectral_log_likelihood(theta, f, M, periodogram):
     T = tList[-1]
     f_array = np.array([f(j / T, theta) for j in range(1, M+1)])
-    periodogram = np.array([bartlett_periodogram(j / T, tList) for j in range(1, M+1)])
     pll = -(1/T) * np.sum(np.log(f_array) + (1/f_array) * periodogram)
 
     return -pll
 
 
-def spectral_log_likelihood_grad(theta, f, M, tList):
+def spectral_log_likelihood_grad(theta, f, M, periodogram):
     T = tList[-1]
     f_array = np.array([f(j / T, theta) for j in range(1, M+1)])
     f_val, grad = f_array[:, 0], f_array[:, 1:]
-    periodogram = np.array([bartlett_periodogram(j / T, tList) for j in range(1, M+1)])
     pll = -(1/T) * np.sum(np.log(f_val) + (1/f_val) * periodogram)
     aux = (1/f_val) * (1 - (1/f_val) * periodogram)
     pll_grad = -(1/T) * np.sum(grad * aux.reshape(M, 1), axis=0)

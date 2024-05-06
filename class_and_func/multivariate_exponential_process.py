@@ -254,7 +254,7 @@ class exp_thinning_hawkes(object):
                 stats.probplot(self.intervals_transformed[exclude_values:], dist=stats.expon, plot=plot)
 
 
-class exp_thinning_hawkesmultivariate_exponential_hawkes(object):
+class multivariate_exponential_hawkes(object):
     """
     Multivariate Hawkes process with exponential kernel. No events nor initial conditions considered.
     """
