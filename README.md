@@ -32,8 +32,8 @@ The image below shows the results of ```bivariate_noisy_estimation.py```:
 
 This code was implemented using Python 3.8.5 and needs Numpy, Matplotlib and Scipy.
 
-Pickle package must be used to used the precomputed estimations presented in the paper.
-Jupyter notebooks use multiprocess package.
+Pickle package is needed to use the precomputed estimations presented in the paper and found in ```graphics/saved_estimations``` folder.
+Bivariate Jupyter notebooks for estimation in ```estimation``` folder use multiprocess package (optional but recommended).
 
 ## Installation
 
