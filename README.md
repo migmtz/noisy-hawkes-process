@@ -21,7 +21,7 @@ The implemented spectral density functions correspond to the exponential kernel 
 We include two examples of application:
 * ```univariate_noisy_estimation.py``` for an estimation in the univariate setting, which requires fixing one parameter to assure identifiability of the model.
 * ```bivariate_noisy_estimation.py``` for an estimation in the bivaraite setting. (Proven) Identifiable settings assume that certain interactions are null. Function
-```spectral_multivariate_noised_ll``` can be used to estimate the null interactions before implementing one of the identifiable cases (specially when many realisatgions are available).
+```spectral_multivariate_noised_ll``` can be used to estimate the null interactions before implementing one of the identifiable cases (specially when many realisations are available).
 
 The image below shows the results of ```bivariate_noisy_estimation.py```:
 
