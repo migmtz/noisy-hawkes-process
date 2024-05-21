@@ -46,4 +46,4 @@ Miguel Alejandro Martinez Herrera
 ## References
 
 <a id="1">[1]</a>
-A. Bonnet, F. Cheysson, M. Martinez Herrera, M. Sangnier, Spectral analysis for noisy Hawkes processes inference. 2024.
+A. Bonnet, F. Cheysson, M. Martinez Herrera, M. Sangnier, Spectral analysis for noisy Hawkes processes inference. Hal: [⟨hal-04580719⟩](https://hal.science/hal-04580719) 2024.
