@@ -1,6 +1,6 @@
 # Spectral estimation for Noisy Hawkes processes
 
-Source code for [Spectral analysis for noisy Hawkes processes inference](TBD) [[1]](#1). 
+Source code for [Spectral analysis for noisy Hawkes processes inference]((https://hal.science/hal-04580719)) [[1]](#1). 
 
 This code implements parametric estimation of Hawkes process when noised by an independent, homogeneous Poisson process.
 Data is assumed to be the superposition of these two point processes, which corresponds to the ordered union of event times. We assume that both processes are indistinguishable, in other words, there is no way of knowing whether a point comes from the Hawkes process or the Poisson process.
@@ -46,4 +46,4 @@ Miguel Alejandro Martinez Herrera
 ## References
 
 <a id="1">[1]</a>
-A. Bonnet, M. Martinez Herrera, M. Sangnier, Spectral analysis for noisy Hawkes processes inference. arXiv:TBD
+A. Bonnet, F. Cheysson, M. Martinez Herrera, M. Sangnier, Spectral analysis for noisy Hawkes processes inference. 2024.
