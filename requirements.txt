@@ -1,0 +1,6 @@
+finufft==2.3.0
+matplotlib==3.9.2
+multiprocess==0.70.16
+numpy==2.1.2
+scipy==1.14.1
+seaborn==0.13.2

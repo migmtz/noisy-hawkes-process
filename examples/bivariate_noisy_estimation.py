@@ -1,9 +1,18 @@
-from class_and_func.multivariate_exponential_process import multivariate_exponential_hawkes
-from class_and_func.spectral_functions import multivariate_periodogram, spectral_multivariate_noised_ll_trinf
+from class_and_func.simulation_exponential_hawkes import multivariate_exponential_hawkes
+from class_and_func.spectral_functions import fast_multi_periodogram
+from class_and_func.estimator_class import multivariate_spectral_noised_estimator
 import numpy as np
-from scipy.optimize import minimize
-from scipy.linalg import norm
 import time
+
+
+def job(it, periodo, max_time):
+    np.random.seed(it)
+    mask = np.array([[True, False],
+                     [True, True]])
+    estimator = multivariate_spectral_noised_estimator(mask=mask)
+    res = estimator.fit(periodo, max_time)
+
+    return res.x
 
 
 if __name__ == "__main__":
@@ -23,11 +32,8 @@ if __name__ == "__main__":
     theta = np.concatenate((mu.ravel(), alpha.ravel(), beta.ravel()))
     theta = np.append(theta[theta > 0.0], noise)
 
-    bounds = [(1e-16, None), (1e-16, None), (1e-16, 1 - 1e-16), (1e-16, 1 - 1e-16), (1e-16, 1 - 1e-16),
-              (1e-16, None), (1e-16, None), (1e-16, None)]
-
     np.random.seed(0)
-    hp = multivariate_exponential_hawkes(mu, alpha * beta, beta, max_time=max_time)
+    hp = multivariate_exponential_hawkes(mu, alpha, beta, max_time=max_time)
     hp.simulate()
     hp_times = hp.timestamps
 
@@ -38,24 +44,21 @@ if __name__ == "__main__":
     idx = np.argsort(pp_times[1:-1] + hp_times, axis=0)[:, 0]
     parasited_times = np.array(pp_times[1:-1] + hp_times)[idx]
     K = int(parasited_times.shape[0])
-    init = np.random.rand(8) / 2 + np.r_[.75, .75, 0., 0., 0., .75, .75, .75]
 
-    periodogram = [multivariate_periodogram(j / max_time, parasited_times) for j in range(1, K + 1)]
+    periodogram = fast_multi_periodogram(K, parasited_times, max_time)
 
     start_time = time.time()
-    res = minimize(spectral_multivariate_noised_ll_trinf,
-                   init, tol=1e-16,
-                   method="L-BFGS-B", jac=None,
-                   args=(periodogram, K, max_time),
-                   bounds=bounds, options={"disp": False})
+    res = job(0, periodogram, max_time)
     end_time = time.time()
 
-    mu_est = np.array(res.x[0:2]).reshape((2,1))
-    alpha_est = np.array([[res.x[2], 0], res.x[3:5]])
+    print(res)
+
+    mu_est = np.array(res[0:2]).reshape((2,1))
+    alpha_est = np.array([[res[2], 0], res[3:5]])
 
     print("Total time of computation: " + str(end_time - start_time) + " sec.", end="\n\n")
     print("         Real values:     Estimated values:")
 
     parameters_tri = ["mu_1    ", "mu_2    ", "alpha_11", "alpha_21", "alpha_22", "beta_1  ", "beta_2  ", "lambda_0"]
-    for a, b, c in zip(parameters_tri, theta, res.x):
+    for a, b, c in zip(parameters_tri, theta, res):
         print(a + "{0:8}            {1:8.3f}".format(b, c))
