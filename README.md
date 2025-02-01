@@ -1,6 +1,7 @@
 # Spectral estimation for Noisy Hawkes processes
 
 Source code for [Spectral analysis for noisy Hawkes processes inference](https://hal.science/hal-04580719) [[1]](#1). 
+Code pre-revision (before 1st February 2025) is now in branch [pre_revision_v1](https://github.com/migmtz/noisy-hawkes-process/tree/pre_revision_v1)
 
 This code implements parametric estimation of Hawkes process when noised by an independent, homogeneous Poisson process.
 Data is assumed to be the superposition of these two point processes, which corresponds to the ordered union of event times. We assume that both processes are indistinguishable, in other words, there is no way of knowing whether a point comes from the Hawkes process or the Poisson process.
