@@ -41,6 +41,8 @@ if __name__ == "__main__":
     df = pd.read_csv('spk_mouse22.csv', sep=',', header=0, index_col=0)
     #print(df.values)
     which="unnoised"
+    if which not in ['noised', 'unnoised' or 'reduced']:
+        raise ValueError("Choose a valid model among: 'noised', 'unnoised' or 'reduced'")
 
     max_time = 725
     partition_size = 725//5
@@ -102,17 +104,9 @@ if __name__ == "__main__":
         with Pool(5) as p:
             estimations = np.array(
                 p.starmap(unnoised_job, zip(range(partitioned_total), periodogram_list, [partition_size] * partitioned_total)))
-        # for i in range(partitioned_total):
-        #    print("*"*150)
-        #    print(i)
-        #    estimations = unnoised_job(i, periodogram_list[i], partition_size)
-    else:
-        print("wrong")
-    #for it, periodo in zip(range(partitioned_total), periodogram_list):
-    #    res[it, :] = job_mask(it, periodo, max_time)
+
     end_time = time.time()
     print("|")
     print("In ", end_time - start_time, " s.")
-    # print(res_red)
 
     np.savetxt("saved_estimations/" + str(max_time//partition_size) + "partition_2neurons_estimation_NlogN" + text + ".csv", estimations, delimiter=",")
