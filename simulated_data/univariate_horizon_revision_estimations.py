@@ -1,15 +1,15 @@
 import numpy as np
 from class_and_func.simulation_exponential_hawkes import multivariate_exponential_hawkes
-from class_and_func.estimator_class import old_univariate_spectral_noised_estimator
+from class_and_func.estimator_class import univariate_spectral_noised_estimator
 from class_and_func.spectral_functions import fast_multi_periodogram
 from multiprocessing import Pool
 import time
 
 
-def old_job(it, periodo, max_time, fixed_parameter):
+def job(it, periodo, max_time, fixed_parameter):
     np.random.seed(it+100)
 
-    estimator = old_univariate_spectral_noised_estimator(fixed_parameter)
+    estimator = univariate_spectral_noised_estimator(fixed_parameter)
     start_time = time.time()
     res = estimator.fit(periodo, max_time)
     end_time = time.time()
@@ -66,13 +66,11 @@ if __name__ == "__main__":
             hp = multivariate_exponential_hawkes(mu, alpha, beta, max_time=max_time, burn_in=burn_in)
             hp.simulate()
             hp_times = hp.timestamps
-            #print("lenH", len(hp_times), max_time * mu/(1-alpha))
 
             pp = multivariate_exponential_hawkes(noise * np.ones((1, 1)), 0 * alpha, beta, max_time=max_time,
                                                  burn_in=burn_in)
             pp.simulate()
             pp_times = pp.timestamps
-            #print("lenP", len(pp_times), max_time*noise)
 
             idx = np.argsort(pp_times[1:-1] + hp_times, axis=0)[:, 0]
             parasited_times = np.array(pp_times[1:-1] + hp_times)[idx]
@@ -98,12 +96,12 @@ if __name__ == "__main__":
                     start_time = time.time()
                     with Pool(5) as p:
                         estimations = np.array(
-                            p.starmap(old_job, zip(range(repetitions), periodogram_list, [max_time] * (repetitions),[fixed_parameter] * (repetitions))))
+                            p.starmap(job, zip(range(repetitions), periodogram_list, [max_time] * (repetitions),[fixed_parameter] * (repetitions))))
                     #print('|\n Done')
                     end_time = time.time()
                     #print("Estimation time:", end_time - start_time)
                     #print(estimations)
                     #print("*"*100)
 
-                    np.savetxt("saved_estimations_univariate/horizons_revision/" + str(horizon) + "univariate_horizon_2" + str(K_func_name[K_idx]) + "_"+ fixed_list[j] + "_" + str(np.round(noise, 2)) + ".csv", estimations,
+                    np.savetxt("saved_estimations_univariate/horizons_revision/" + str(horizon) + "univariate_horizon_" + str(K_func_name[K_idx]) + "_"+ fixed_list[j] + "_" + str(np.round(noise, 2)) + ".csv", estimations,
                                delimiter=",")
