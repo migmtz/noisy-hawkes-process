@@ -27,7 +27,7 @@ def estimate_spectral_density(parasited_times_list, max_time, max_freq=2.0, smoo
                     parasited_times_list], axis=0)
 
     smooth_window = K // smooth_parameter
-    smooth_rolling_IT = []
+    smooth_rolling_centered = []
     general_weights = np.array([stats.binom.pmf(i, 2 * smooth_window, 0.5) for i in range(2 * smooth_window + 1)])
     for i in range(0, len(IT_x)):
 
@@ -41,15 +41,15 @@ def estimate_spectral_density(parasited_times_list, max_time, max_freq=2.0, smoo
         else:
             weights = general_weights
 
-        smooth_rolling_IT += [np.average(aux, weights=weights)]
+        smooth_rolling_centered += [np.average(aux, weights=weights)]
 
-    popt, _ = curve_fit(func, x_freq[K + 1:], smooth_rolling_IT[K + 1:])
+    popt, _ = curve_fit(func, x_freq[K + 1:], smooth_rolling_centered[K + 1:])
     a, b, c = popt
     est_max_freq = np.abs(b) * np.sqrt(1 / epsilon - 1) / (2 * np.pi)
 
     final_K = int(np.ceil(est_max_freq * max_time))
 
-    return x_freq, smooth_rolling_IT, popt, est_max_freq, final_K, IT_x[K+1:K+1+final_K]
+    return x_freq, smooth_rolling_centered, popt, est_max_freq, final_K, IT_x[K+1:K+1+final_K]
 
 
 if __name__ == "__main__":
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     yaux = func(x_freq[K:], *popt)
 
     ax.plot(xaux, yaux, label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
-    print("Explicit estimated:", est_max_freq)
+    print("Explicit estimated maximal frequency:", est_max_freq)
     ax.plot([est_max_freq, est_max_freq], ax.get_ylim(), label="Estimated maximal frequency")
 
     ax.legend()

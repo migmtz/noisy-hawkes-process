@@ -9,9 +9,35 @@ from scipy import stats
 def func(x, a, b, c):
     return (a**2)/(b**2 + (2*np.pi*x)**2) + c**2
 
-def der(x, a, b, c):
-    return -a * (8 *x * np.pi**2)/((b + (2*np.pi*x)**2)**2)
 
+def estimate_spectral_density_smoothing(parasited_times_list, max_time, max_freq=2.0, smooth_parameter=25, epsilon=0.01):
+    K = int(np.ceil(max_freq * max_time))
+    x_freq = np.arange(-K, K + 1) / max_time
+
+    IT_x = np.mean([fast_multi_periodogram_window(parasited_times, max_time, max_freq).real.squeeze() for parasited_times in
+                    parasited_times_list], axis=0)
+
+    smooth_window = K // smooth_parameter
+    smooth_rolling_IT = []
+    smooth_rolling_centered = []
+    general_weights = np.array([stats.binom.pmf(i, 2 * smooth_window, 0.5) for i in range(2 * smooth_window + 1)])
+    for i in range(0, len(IT_x)):
+
+        aux = IT_x[max(i - smooth_window, 0): min(i + smooth_window, len(IT_x)) + 1]
+        smooth_rolling_IT += [np.mean(aux)]
+
+        if i < smooth_window:
+            weights = general_weights[smooth_window - i:] / stats.binom.cdf(smooth_window + i, 2 * smooth_window, 0.5)
+        elif i >= len(IT_x) - smooth_window - 1:
+            weights = general_weights[(smooth_window + i - len(IT_x)) + 1:] / stats.binom.cdf((smooth_window - i + len(IT_x) - 1),
+                                                                                      2 * smooth_window, 0.5)
+            weights = np.flip(weights)
+        else:
+            weights = general_weights
+
+        smooth_rolling_centered += [np.average(aux, weights=weights)]
+
+    return x_freq, IT_x, smooth_rolling_IT, smooth_rolling_centered
 
 if __name__ == "__main__":
     sns.set_theme()
@@ -34,9 +60,6 @@ if __name__ == "__main__":
 
     max_freq = 10.0
     nb_freq = int(np.ceil(max_freq * max_time))
-    x = np.arange(-nb_freq, nb_freq + 1) / max_time
-
-    f_x = np.array([spectral_w_mask((mu, alpha, beta, noise), x_0)[0] for x_0 in x])
 
     repetitions = 10
     parasited_times_list = []
@@ -54,38 +77,20 @@ if __name__ == "__main__":
         parasited_times = np.array(pp_times[1:-1] + hp_times)[idx]
         parasited_times_list += [parasited_times]
 
-    IT_x = np.mean([fast_multi_periodogram_window(parasited_times, max_time, max_freq).real.squeeze() for parasited_times in
-                    parasited_times_list], axis=0)
+    x_freq, IT_x, smooth_rolling_IT, smooth_rolling_centered = estimate_spectral_density_smoothing(parasited_times_list, max_time, max_freq=max_freq)
 
-    largo = nb_freq // 20
-
-    smooth_rolling = []
-    smooth_rolling_centered = []
-    general_weights = np.array([stats.binom.pmf(i, 2 * largo, 0.5) for i in range(2 * largo+1)])
-    for i in range(0, len(IT_x)):
-
-        aux = IT_x[max(i - largo, 0): min(i + largo, len(IT_x))+1]
-        smooth_rolling += [np.mean(aux)]
-        if i < largo:
-            weights = general_weights[largo-i:] / stats.binom.cdf(largo + i, 2*largo, 0.5)
-        elif i >= len(IT_x) - largo-1:
-            weights = general_weights[(largo +i-len(IT_x))+1:] / stats.binom.cdf((largo -i+len(IT_x)-1), 2*largo, 0.5)
-            weights = np.flip(weights)
-        else:
-            weights = general_weights
-
-        smooth_rolling_centered += [np.average(aux, weights=weights)]
+    f_x = np.array([spectral_w_mask((mu, alpha, beta, noise), x_0)[0] for x_0 in x_freq])
 
     fig, ax = plt.subplots(1, 3, sharex=True, figsize=(15,6))
 
-    ax[0].plot(x, f_x, label="Spectral density")
-    ax[0].plot(x, IT_x, c="r", alpha=0.5, label="Periodogram")
+    ax[0].plot(x_freq, f_x, label="Spectral density")
+    ax[0].plot(x_freq, IT_x, c="r", alpha=0.5, label="Periodogram")
 
-    ax[1].plot(x, f_x, label="Spectral density")
-    ax[1].plot(x, smooth_rolling, label="Rolling average smoothing")
+    ax[1].plot(x_freq, f_x, label="Spectral density")
+    ax[1].plot(x_freq, smooth_rolling_IT, label="Rolling average smoothing")
 
-    ax[2].plot(x, f_x, label="Spectral density")
-    ax[2].plot(x, smooth_rolling_centered, label="Rolling weighted average smoothing")
+    ax[2].plot(x_freq, f_x, label="Spectral density")
+    ax[2].plot(x_freq, smooth_rolling_centered, label="Rolling weighted average smoothing")
 
     ax[0].legend(loc="upper left")
     ax[1].legend(loc="upper left")
