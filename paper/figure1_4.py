@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
 
     # Load estimations
-    with open("../simulated_data/univariate_estimations", 'rb') as f:
+    with open("../simulated_data/saved_estimations_univariate/univariate_estimations", 'rb') as f:
         a = pickle.load(f)
         _, list_log = a[0], [a[i] for i in range(1,len(a))]
 
