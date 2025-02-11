@@ -68,8 +68,6 @@ if __name__ == "__main__":
     ax.plot(aux_list, n_list, label="Proportion of total simulations.")
     ax.set_xlabel("$\\lambda_{max}$")
     plt.legend()
-    for i,j in zip(aux_list, y_list):
-        print(i,j)
 
     plt.savefig("graphics/accuracy_noise.pdf", format="pdf", bbox_inches="tight")
 
