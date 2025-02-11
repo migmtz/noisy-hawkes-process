@@ -49,7 +49,7 @@ def spike_and_slab(dim, seed=None):
 
 if __name__ == "__main__":
 
-    repetitions = 100 #* 10 #15*10 done, change range if necessary for new estimations and to make 160.
+    repetitions = 100
     max_time = 200
     burn_in = -100
     partition_nb = 10
@@ -108,7 +108,6 @@ if __name__ == "__main__":
         new_max_time = complete_parasited[-1][0]
         partition_size = new_max_time / partition_nb
         partition_list = [i * partition_size for i in range(partition_nb + 1)]
-        #print(new_max_time, partition_list)
 
         periodogram_inter = []
         for i in range(len(partition_list) - 1):
@@ -124,9 +123,7 @@ if __name__ == "__main__":
         theta_list += [theta]
         max_time_list += [partition_size]
         periodogram_list += [periodogram_inter]
-    #toSave = np.concatenate((theta_list, np.array([K_list]).T), axis=1)
-    #np.savetxt("saved_estimations/spike_and_slab/parameters_K.csv", toSave, delimiter=",")
-    with open("saved_estimations/spike_and_slab/prueba_parameters_fixed", 'wb') as file:
+    with open("saved_estimations/spike_and_slab/prueba_parameters", 'wb') as file:
         pickle.dump(np.array(theta_list), file)
 
     print('|' + '-' * (repetitions) + '|')
@@ -135,18 +132,10 @@ if __name__ == "__main__":
     with Pool(8) as p:
         estimations = np.array(p.starmap(job, zip(range(repetitions), periodogram_list, max_time_list)))
     print('|\n Done')
-    # estimations = np.array([job(it, periodo) for it, periodo in zip(range(repetitions), periodogram_list)])
     end_time = time.time()
     print("Estimation time:", end_time - start_time)
 
     print(estimations, estimations.shape)
 
-    #np.savetxt("saved_estimations/spike_and_slab/prueba.csv", estimations, delimiter=",")
-
-    with open("saved_estimations/spike_and_slab/prueba_estimations_fixed", 'wb') as file:
+    with open("saved_estimations/spike_and_slab/prueba_estimations", 'wb') as file:
         pickle.dump(estimations, file)
-    #
-    # with open("saved_estimations/spike_and_slab/prueba.csv", 'rb') as file:
-    #     blah = pickle.load(file)
-    #
-    # print(blah)
