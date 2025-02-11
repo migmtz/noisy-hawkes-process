@@ -1,15 +1,15 @@
 import numpy as np
 from class_and_func.simulation_exponential_hawkes import multivariate_exponential_hawkes
-from class_and_func.estimator_class import old_univariate_spectral_noised_estimator
+from class_and_func.estimator_class import univariate_spectral_noised_estimator
 from class_and_func.spectral_functions import fast_multi_periodogram
 from multiprocessing import Pool
 import time
 
 
-def old_job(it, periodo, max_time, fixed_parameter):
+def job(it, periodo, max_time, fixed_parameter):
     np.random.seed(it+100)
 
-    estimator = old_univariate_spectral_noised_estimator(fixed_parameter)
+    estimator = univariate_spectral_noised_estimator(fixed_parameter)
     start_time = time.time()
     res = estimator.fit(periodo, max_time)
     end_time = time.time()
@@ -96,7 +96,7 @@ if __name__ == "__main__":
                 start_time = time.time()
                 with Pool(2) as p:
                     estimations = np.array(
-                        p.starmap(old_job, zip(range(repetitions), periodogram_list, [partition_size] * (repetitions),
+                        p.starmap(job, zip(range(repetitions), periodogram_list, [partition_size] * (repetitions),
                                            [fixed_parameter] * (repetitions))))
                 print('|\n Done')
                 end_time = time.time()

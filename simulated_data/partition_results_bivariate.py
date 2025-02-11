@@ -35,9 +35,9 @@ if __name__ == "__main__":
     estimations = pd.read_csv('saved_estimations/partition/' + str(partition_size) + 'multivariate_column_partition_' + str(max_time) + '.csv', sep=',', header=None,
                                      index_col=None).to_numpy()
 
-    print(np.mean(estimations[:, :], axis=0))
+    #print(np.mean(estimations[:, :], axis=0))
     print("Quantiles of interaction Scenario 1", np.quantile(estimations[:, dim:dim + dim**2], axis=0, q=0.05))#, method="closest_observation"))
-    print("Proportion of null Scenario 1:", np.mean(estimations < 2e-16, axis=0))
+    print("Proportion of null Scenario 1:", np.mean(estimations[:, dim:dim + dim**2] < 2e-16, axis=0))
 
     theta = np.concatenate((mu.ravel(), alpha.ravel(), beta.ravel(), np.array([noise])))
 
@@ -47,9 +47,9 @@ if __name__ == "__main__":
             max_time) + '.csv', sep=',', header=None,
         index_col=None).to_numpy()
 
-    print(np.mean(estimations[:, :], axis=0))
+    #print(np.mean(estimations[:, :], axis=0))
     print("Quantiles of interaction Scenario 1", np.quantile(estimations[:, dim:dim + dim**2], axis=0, q=0.05))#, method="closest_observation"))
-    print("Proportion of null Scenario 2:", np.mean(estimations < 2e-16, axis=0))
+    print("Proportion of null Scenario 2:", np.mean(estimations[:, dim:dim + dim**2] < 2e-16, axis=0))
 
     ################################################################## Red
     # estimations_red = np.zeros((repetitions, 7))
@@ -99,4 +99,4 @@ if __name__ == "__main__":
     # ax[1].set_title("Reduced model $\mathcal{Q}_{\Lambda}$")
     # plt.savefig("partition_estimation_boxplots.pdf", format="pdf", bbox_inches="tight")
 
-    plt.show()
+    # plt.show()
