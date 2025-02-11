@@ -29,11 +29,6 @@ def f_2(n):
     return int(n * np.log(n))
 
 
-sns.set_context("paper", rc={"font.size":14,"axes.titlesize":16, 'axes.labelsize': 14,
-                             'xtick.labelsize': 14,'ytick.labelsize': 14, 'legend.fontsize': 14,
-                             })
-
-
 if __name__ == "__main__":
 
     mu = np.array([[1.0],
