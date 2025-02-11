@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
                 print("*"*70)
 
-                np.savetxt("saved_estimations_univariate/horizons_revision/" + str(horizon) + "univariate_horizon_2adaptive_"+ fixed_list[j] + "_" + str(np.round(noise, 2)) + ".csv", estimations,
+                np.savetxt("saved_estimations_univariate/horizons_revision/" + str(horizon) + "univariate_horizon_adaptive_"+ fixed_list[j] + "_" + str(np.round(noise, 2)) + ".csv", estimations,
                            delimiter=",")
             end_time = time.time()
             print("Estimation time:", end_time - start_time)
