@@ -57,13 +57,6 @@ if __name__ == "__main__":
             means[id_noise, i] = np.mean(errors[:, id_noise, i], axis=0)
             st_dev[id_noise, i] = (50/49) * (np.mean(errors[:, id_noise, i]**2) - means[id_noise, i]**2)
             print(estimations[:, id_noise,i,:].mean(axis=0))
-            #print(errors[0, id_noise, i], estimations[0, id_noise, i, :], thetas[id_noise, i, :])
-
-    #print(estimations.mean(axis=0))
-
-    #avg_estimations = estimations.mean(axis=0)
-    #print(avg_estimations)
-    #print(avg_estimations[:, 0, :].shape, thetas[:, 0, :].shape)
 
     fig, ax = plt.subplots(figsize=(5.90666 * 2, 6))
 
@@ -77,8 +70,7 @@ if __name__ == "__main__":
     ax.set_xticks(noise_list)
     ax.set_xlabel("$\\lambda_0$")
     ax.set_ylabel("$\ell_2$ relative error")
-    #ax.set_title("Estitmations at constant average intensity")
-    #ax.set_ylim((-0.01,0.5))
+
     plt.legend()
     plt.savefig("constant_intensity_estimation.pdf", format="pdf", bbox_inches="tight")
 

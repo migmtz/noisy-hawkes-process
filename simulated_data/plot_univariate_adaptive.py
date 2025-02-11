@@ -21,25 +21,36 @@ def plot_with_confidence(x, y_down, y_up, ax, c='blue', alpha=0.2):
 
 linestyles = ["solid", "dashdot", "dotted"]
 
+sns.set_context("paper", rc={"font.size":14,"axes.titlesize":16, 'axes.labelsize': 14,
+                             'xtick.labelsize': 14,'ytick.labelsize': 14, 'legend.fontsize': 10,
+                             })
+
+
+linestyles = ["solid", "dashdot", "dotted"]
+titles = [r"$\mu$ fixed", r"$\alpha$ fixed", r"$\beta$ fixed", r"$\lambda_0$ fixed"]
+labels = [r"$M=N(T)$",
+          r"$M=N(T)\,\log N(T)$", "Adaptive"]
+
 
 if __name__ == "__main__":
     parameter_list = ["mu", "alpha", "beta", "noise"]
     horizons = [250, 500, 1000, 2000, 4000, 8000]
-    N_func = ["N", "NlogN"]#, "adaptive"]
-    versions = ["original"]#["original", "revision"]
+    N_func = ["N", "NlogN", "2adaptive"]
+    versions = ["revision"]#["original", "revision"]
     repetitions = 50
 
     mu_ = {"original":1.0, "revision":1/8}
     alpha_ = {"original":0.5, "revision":1/8}
     beta_ = {"original":1.0, "revision":1.0}
     noise_length = 10
+    noise_chosen = 4
 
     for id, version in enumerate(versions):
         mu = mu_[version]
         alpha = alpha_[version]
         beta = beta_[version]
         noise_list = np.round(mu * np.array([0.2 * k for k in range(1, noise_length+1)]) / (1-alpha), 2)
-
+        print(noise_list[noise_chosen])
         estimations = np.zeros((repetitions, len(parameter_list),len(horizons), len(N_func), len(noise_list), 3))
         computation_times = np.zeros((repetitions, len(parameter_list),len(horizons), len(N_func), len(noise_list)))
         errors = np.zeros((repetitions, len(parameter_list),len(horizons), len(N_func), len(noise_list)))
@@ -58,34 +69,36 @@ if __name__ == "__main__":
                             estimations[:, id_param, id_horizon, id_N, id_noise, :] = aux[:, :-1]
                             #print(theta_fixed, np.mean(aux[:, :-1], axis=0))
                             computation_times[:, id_param, id_horizon, id_N, id_noise] = aux[:, -1]
-                            print("*"*100)
                             print(aux[:,:-1], theta_fixed, norm(aux[:,:-1] - theta_fixed,axis=1) )
-                            print("*" * 100)
                             aux_error = norm(aux[:, :-1] - theta_fixed,axis=1) / norm(theta_fixed)
-                            print(aux_error)
                             errors[:, id_param, id_horizon, id_N, id_noise] = aux_error
                             mean[id_param, id_horizon, id_N, id_noise] = np.mean(aux_error)
                             std_dev[id_param, id_horizon, id_N, id_noise] = np.std(aux_error)
 
-    noise_chosen = 6
     print("Noise: ", noise_list[6])
-    fig, ax = plt.subplots(2, 4, figsize=(5.90666 * 2, 6), sharey=True)
+    fig, ax = plt.subplots(1, 4, figsize=(5.90666 * 2, 4), sharey=True)
     for id_param, parameter in enumerate(parameter_list):
         for id_N, N in enumerate(N_func):
-            ax[0, id_param].plot(horizons, mean[id_param, :, id_N, noise_chosen], c="C" + str(id_N),
-                                 linestyle=linestyles[0], label=N)
+            ax[id_param].plot(horizons, mean[id_param, :, id_N, noise_chosen], c="C" + str(id_N),
+                                 linestyle=linestyles[0], label=labels[id_N])
             aux1 = mean[id_param, :, id_N, noise_chosen] - 1.96 * np.sqrt(std_dev[id_param, :, id_N, noise_chosen] / repetitions)
             aux2 = mean[id_param, :, id_N, noise_chosen] + 1.96 * np.sqrt(std_dev[id_param, :, id_N, noise_chosen] / repetitions)
-            plot_with_confidence(horizons, aux1, aux2, ax[0, id_param], c="C" + str(id_N), alpha=0.1)
-            ax[0, id_param].set_xscale("log")
+            plot_with_confidence(horizons, aux1, aux2, ax[id_param], c="C" + str(id_N), alpha=0.1)
+            ax[id_param].set_xscale("log")
             #ax[1, idx_parameter].set_xscale("log")
+            ax[id_param].set_xlabel(r"$T$")
+            ax[id_param].set_ylabel(r"$\ell^2$ relative error")
+            ax[id_param].set_title(titles[id_param])
+            ax[id_param].legend()
 
-            mean_times = np.mean(computation_times[:, id_param, :, id_N, noise_chosen], axis=0)
-            ax[1, id_param].plot(mean_times, mean[id_param, :, id_N, noise_chosen], c="C" + str(id_N),
-                                 linestyle=linestyles[0], label=N)
 
-            plot_with_confidence(mean_times, aux1, aux2, ax[1, id_param], c="C" + str(id_N), alpha=0.1)
-            ax[1, id_param].set_xscale("log")
+    ax[0].set_ylim((ax[0].get_ylim()[0], 3.0))
+    ax[0].legend()
 
-    ax[0,0].legend()
+
+    # fig.suptitle(r"Noise level: $\lambda_0 = {}$".format(noise_levels[idx]))
+    plt.tight_layout()
+
+    plt.savefig("l2_error_wrt_nbpoints_adaptive.pdf", format="pdf", bbox_inches="tight")
+
     plt.show()
