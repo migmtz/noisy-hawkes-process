@@ -99,10 +99,11 @@ class multivariate_spectral_unnoised_estimator(object):
 
 
 class multivariate_spectral_noised_estimator(object):
-    def __init__(self, loss=grad_ll_mask, grad=True, initial_guess="random", mask=None, options=None):
+    def __init__(self, loss=grad_ll_mask, grad=True, initial_guess="random", bounds="default", mask=None, options=None):
         self.loss = loss
         self.grad = grad  # By default uses grad version of spectral ll
         self.initial_guess = initial_guess
+        self.bounds = bounds
         self.mask = mask
 
         if options is None:
@@ -115,10 +116,11 @@ class multivariate_spectral_noised_estimator(object):
         K = int(periodogram.shape[0])
         self.dim = (periodogram[0]).shape[0]
 
-        # Bounds
-        bounds = [(1e-16, None)] * self.dim
-        bounds += ([(1e-16, 1 - 1e-16)] + [(1e-16, None)] * self.dim) * (self.dim - 1) + [(1e-16, 1 - 1e-16)]
-        bounds += [(1e-16, None)] * (self.dim + 1)
+        # Mask of parameters
+        if self.mask is not None:
+            param_mask = np.concatenate(([True] * self.dim, self.mask.ravel(), self.mask.any(axis=1), [True]))
+        else:
+            param_mask = np.array([True] * (self.dim * (2 + self.dim) + 1))
 
         # Initial point
         if isinstance(self.initial_guess, str) and self.initial_guess == "random":
@@ -130,15 +132,18 @@ class multivariate_spectral_noised_estimator(object):
             init_alpha = a * div / (radius)
 
             self.init = np.concatenate((init_a[0:2].ravel(), init_alpha.ravel(), init_a[2:].ravel()))
-
-        # Mask of parameters
-        if self.mask is not None:
-            param_mask = np.concatenate(([True] * self.dim, self.mask.ravel(), self.mask.any(axis=1), [True]))
-            bounds = np.array(bounds)[param_mask]
             self.init = self.init[param_mask]
-
         else:
-            param_mask = np.array([True]*(self.dim * (2 + self.dim) + 1))
+            self.init = np.array(self.initial_guess)
+
+        # Bounds
+        if isinstance(self.bounds, str) and self.bounds == "default":
+            bounds = [(1e-16, None)] * self.dim
+            bounds += ([(1e-16, 1 - 1e-16)] + [(1e-16, None)] * self.dim) * (self.dim - 1) + [(1e-16, 1 - 1e-16)]
+            bounds += [(1e-16, None)] * (self.dim + 1)
+            bounds = np.array(bounds)[param_mask]
+        else:
+            bounds = self.bounds
 
         # Estimation
         self.res = minimize(self.loss,

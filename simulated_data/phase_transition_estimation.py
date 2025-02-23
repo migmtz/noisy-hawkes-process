@@ -7,16 +7,17 @@ import time
 import pickle
 
 
-def job(it, periodo, max_time):
-    np.random.seed(it)
+def job(it, periodo, max_time, alpha, trial):
+    np.random.seed(it + 42 + trial * 100)
     mask = np.array([[False, False],
                      [True, False]])
-    estimator = multivariate_spectral_noised_estimator(mask=mask)
+    bounds = [(1e-16, None)] * 2 + [(1e-16, 1 - 1e-16)]  + [(1e-16, None)] * 2
+    estimator = multivariate_spectral_noised_estimator(mask=mask, initial_guess=[0.1]*5, bounds=bounds)
     res = estimator.fit(periodo, max_time)
 
     print('-', end='')
 
-    return res.x
+    return {'max_time':max_time, 'alpha':alpha, 'theta':res.x, 'trial':trial}
 
 
 if __name__ == "__main__":
@@ -77,19 +78,17 @@ if __name__ == "__main__":
     print(n_jobs, pairs.shape[0])
     print('|' + '-' * n_jobs + '|')
     print("|", end="")
+
     for trial in range(n_trials):
         # Do the job
-        with Pool(cpu_count() - 3) as p:
-            res_pool = p.starmap(job, zip(range(pairs.shape[0]), periodogram_list[trial], pairs[:, 0]))
+        with Pool(cpu_count() - 1) as p:
+            res_pool = p.starmap(job, zip(range(pairs.shape[0]), periodogram_list[trial], pairs[:, 0], pairs[:, 1], [trial]*pairs.shape[0]))
 
-        # Add trial info
-        #for res in res_pool:
-        #    res['trial'] = trial
         results += res_pool
-        #print(results)
+        print(results)
 
-        # Save
-        with open('saved_estimations/phase_transition/results.pkl', 'wb') as fo:
-            pickle.dump(results, fo)
+    # Save
+    with open('saved_estimations/phase_transition/estimationsAlphaTransition.pkl', 'wb') as fo:
+        pickle.dump(results, fo)
 
     print('\n Done')

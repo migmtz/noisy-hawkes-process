@@ -12,6 +12,14 @@ import pickle
 #sns.set_theme()
 np.set_printoptions(precision=2)
 
+tex = dict(mu1=r'$\hat\mu_1$', mu2=r'$\hat\mu_2$', alpha=r'$\hat\alpha_{2 1}$',
+           beta=r'$\hat\beta_2$', lambda0=r'$\hat\lambda_0$')
+
+
+sns.set_context("paper", rc={"font.size": 14, "axes.titlesize": 16, 'axes.labelsize': 14,
+                             'xtick.labelsize': 10, 'ytick.labelsize': 10, 'legend.fontsize': 14,
+                             })
+
 
 def get_param(res, param):
     theta = res['theta']
@@ -41,6 +49,8 @@ def build_mat(param):
                         true_param = alpha0
                     mat[i, j] += est
                     err_mat[i, j] += np.abs(true_param - est)
+                    if param=='alpha' and res['max_time'] == 100 and res['alpha'] == 0.2:
+                        print(est, err_mat[i,j])
                     std_mat[i, j] += est**2
                     n_mat[i, j] += 1
     mat /= n_mat
@@ -48,18 +58,24 @@ def build_mat(param):
     std_mat = np.sqrt(std_mat/n_mat - mat**2)
     return mat, err_mat, std_mat
 
+
 def plot_mat(m, title='', subplot=None):
-    ax[subplot - 1].imshow(m, cmap='Oranges')
-    plt.colorbar()
+    if subplot:
+        plt.subplot(1, 5, subplot)
+    sns.heatmap(m, cmap="Oranges", annot=True, annot_kws={"fontsize": 8})
     plt.grid(False)
-    for i in range(m.shape[0]):
-        for j in range(m.shape[1]):
-            plt.text(j-.18, i, f'{m[i, j]:.2f}')
-    plt.xticks(range(len(list_alpha)), labels=list_alpha)
-    plt.yticks(range(len(list_max_time)), labels=list_max_time)
-    plt.xlabel('alpha')
-    plt.ylabel('max time')
-    plt.title(title)
+    # for i in range(m.shape[0]):
+    #    for j in range(m.shape[1]):
+    #        plt.text(j-.18, i, f'{m[i, j]:.2f}')
+    plt.xticks(np.arange(len(list_alpha)) + 0.5, labels=list_alpha)
+    plt.xlabel(r'$\alpha_{2 1}$')
+    if subplot == 1:
+        plt.yticks(np.arange(len(list_max_time)) + 0.5, labels=list_max_time, rotation=0)
+
+        plt.ylabel(r'$T$')
+    else:
+        plt.yticks([])
+    plt.title(title, pad=20)
 
 
 if __name__ == "__main__":
@@ -76,44 +92,14 @@ if __name__ == "__main__":
 
     with open('../simulated_data/saved_estimations/phase_transition/estimationsAlphaTransition.pkl', 'rb') as fi:
         pkl_results = pickle.load(fi)
-
-    set_max_time = set()
-    set_alpha = set()
     for res in pkl_results:
-        set_max_time.add(res['max_time'])
-        set_alpha.add(res['alpha'])
-    list_max_time = sorted(set_max_time, reverse=True)
-    list_alpha = sorted(set_alpha)
+        if res['max_time'] == 100 and res['alpha']==0.2:
+            print(res)
 
+    list_alpha = [0.2, 0.4, 0.6, 0.8]
     list_max_time = sorted([100, 1000, 3000, 5000, 10000], reverse=True)
 
-    tex = dict(mu1=r'$\hat\mu_1$', mu2=r'$\hat\mu_2$', alpha=r'$\hat\alpha_{2 1}$',
-               beta=r'$\hat\beta_2$', lambda0=r'$\hat\lambda_0$')
-
-
-    def plot_mat(m, title='', subplot=None):
-        if subplot:
-            plt.subplot(1, 5, subplot)
-        sns.heatmap(m, cmap="Oranges", annot=True, annot_kws={"fontsize": 8})
-        plt.grid(False)
-        # for i in range(m.shape[0]):
-        #    for j in range(m.shape[1]):
-        #        plt.text(j-.18, i, f'{m[i, j]:.2f}')
-        plt.xticks(np.arange(len(list_alpha)) + 0.5, labels=list_alpha)
-        plt.xlabel(r'$\alpha_{2 1}$')
-        if subplot == 1:
-            plt.yticks(np.arange(len(list_max_time)) + 0.5, labels=list_max_time, rotation=0)
-
-            plt.ylabel(r'$T$')
-        else:
-            plt.yticks([])
-        plt.title(title, pad=20)
-
-
-    sns.set_context("paper", rc={"font.size": 14, "axes.titlesize": 16, 'axes.labelsize': 14,
-                                 'xtick.labelsize': 10, 'ytick.labelsize': 10, 'legend.fontsize': 14,
-                                 })
-    fig, ax = plt.subplots(1, 5, figsize=(5.90666 * 2, 3), sharey=True)
+    fig, ax = plt.subplots(1, 5, figsize=(5.90666 * 2, 3))
 
     for i, param in enumerate(['mu1', 'mu2', 'alpha', 'beta', 'lambda0']):
         mat, err_mat, std_mat = build_mat(param)
