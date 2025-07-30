@@ -432,3 +432,15 @@ def grad_ll_mask(theta, periodogram, K, max_time, mask=None):
     ll /= max_time
 
     return (ll[0], ll[1:][param_mask])
+
+### Non parametric density estimation
+
+def estimate_spectral_density(parasited_times_list, max_time, max_freq=15.0):
+    K = int(np.ceil(max_freq * max_time))
+    x_freq = np.arange(-K, K + 1) / max_time
+
+
+    IT_x = np.mean([fast_multi_periodogram_window(parasited_times, max_time, max_freq).real.squeeze() for parasited_times in
+                    parasited_times_list], axis=0)
+
+    return x_freq[K+1:], IT_x[K+1:]

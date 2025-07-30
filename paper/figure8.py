@@ -1,82 +1,58 @@
+import pandas as pd
 import numpy as np
+from class_and_func.spectral_functions import estimate_spectral_density
 from matplotlib import pyplot as plt
 import seaborn as sns
-import pandas as pd
-
 
 sns.set_theme()
 
-sns.set_context("paper", rc={"font.size":14,"axes.titlesize":16, 'axes.labelsize': 14,
-                             'xtick.labelsize': 14,'ytick.labelsize': 14, 'legend.fontsize': 14,
-                             })
+
+titles = ["$f_{11}$", "$f_{22}$"]
 
 
 if __name__ == "__main__":
+    df = pd.read_csv('../real_data_application/spk_mouse22.csv', sep=',', header=0, index_col=0)
+
+    max_time = 725
+    partition_size = 725//5
+    partition_list = [partition_size * i for i in range(0, max_time // partition_size +1)]
+    print(partition_list)
 
     dim = 2
-    positions = [0, 1] + [3 + i for i in range(dim ** 2)] + [3 + i for i in range(dim ** 2, dim ** 2 + dim)]
-    print(positions)
-    positions += [positions[-1] + 2]
-    positions = np.array(positions)
-    print(positions)
+    repetitions = 5
+    K_func = lambda x : int(x)
+    #K_func = lambda x: int(x * np.log(x))
 
-    indices = [0, dim, dim + dim*dim, len(positions)-1, len(positions)]
-    print(indices)
+    data = [df.values[(df.values[:, 2] == i) * (df.values[:, 1] > 4.0), 0:2] for i in range(1,6)]
+    variates_idx = {5.0:1, 6.0:2}
+    data = [np.array([(t - i * max_time, variates_idx[m]) for (t,m) in data[i]]) for i in range(0,5)]
+    print(data[0][:,0])
 
-    alpha_mask = np.array([[True, False],
-                           [True,  True]])
+    partitioned_data = []
 
-    mask = np.array([True]*(dim * (2 + dim) + 1))
-    mask[dim:dim + dim*dim] = alpha_mask.ravel()
+    for i in range(len(partition_list) - 1):
+        for parasited_times in data:
+            flag1 = parasited_times[:, 0] <= partition_list[i + 1]
+            flag2 = partition_list[i] < parasited_times[:, 0]
 
-    positions_red = positions[mask]
-    print(positions_red)
-    positions_red = np.array(positions_red)
-    indices_red = [0, dim, dim + int(np.sum(alpha_mask)), 2 * dim + int(np.sum(alpha_mask)),2 * dim + int(np.sum(alpha_mask)) + 1]
+            aux_parasited = parasited_times[flag1 * flag2, :]
+            partitioned_data += [aux_parasited]
 
-    labels = [["$\\mu_1$", "$\\mu_2$"]]
+    print(len(partitioned_data))
+    # Data count
+    print("# of points per repetition:", [len(u) for u in partitioned_data])
 
-    labels1 = ["$\\alpha_{11}$", "$\\alpha_{12}$"]
-    labels1 += ["$\\alpha_{21}$", "$\\alpha_{22}$"]
-    labels += [labels1]
+    x_freq, final_ITx = estimate_spectral_density(
+        partitioned_data, partition_size)
 
-    labels += [["$\\beta_1$", "$\\beta_2$"]]
+    fig, ax = plt.subplots(1, 2, sharex=True, figsize=(12, 4.5))
 
-    labels += [["$\\lambda_0$"]]
+    for k in range(2):
+        ax[k].plot(x_freq, final_ITx[:, k, k], label="Periodogram", alpha=1.0)
+        ax[k].set_title(titles[k])
+        ax[k].set_xlabel("$\\nu$")
 
-    fig, ax = plt.subplots(1, 4, figsize=(20, 8),width_ratios=(2,4,2,1))
+    ax[0].legend()
 
-    noisedNlogN = pd.read_csv('../real_data_application/saved_estimations/5partition_2neurons_estimation_NlogN.csv', sep=',', header=None, index_col=None).to_numpy()
-    for i in range(4):
-        #print(i)
-        bplot = ax[i].boxplot(noisedNlogN[:, indices[i]:indices[i+1]], widths=0.2, positions=positions[indices[i]:indices[i+1]], tick_labels=labels[i],
-                           patch_artist=True, label=r"$\mathcal{Q}$")
-        for patch in bplot['boxes']:
-            patch.set_facecolor("paleturquoise")
-    alpha_est_noised = noisedNlogN[:, dim:dim+dim**2].reshape((25,dim, dim))
-    mean = np.mean(noisedNlogN, axis=0)
-    print(np.round(mean,2), np.round(np.std(noisedNlogN, axis=0, ddof=1), 2))
-    print("noisedNlogN", np.quantile(noisedNlogN, axis=0, q=0.05, method="closest_observation"))
-    print("noisedNlogN percentages: ", np.mean(noisedNlogN < 2e-16, axis=0))
-
-    noisedNlogN = pd.read_csv('../real_data_application/saved_estimations/5partition_2neurons_estimation_NlogN_red.csv', sep=',', header=None,
-                              index_col=None).to_numpy()
-    for i in range(4):
-        dat = noisedNlogN[:, indices_red[i]:indices_red[i+1]]
-        bplot = ax[i].boxplot(dat, widths=0.2, positions=positions_red[indices_red[i]:indices_red[i+1]] + 0.2, tick_labels=[""]*(dat.shape[1]),
-                           patch_artist=True, label=r"$\mathcal{Q}_{\Lambda}$")
-        for patch in bplot['boxes']:
-            patch.set_facecolor("cornflowerblue")
-
-    alpha_est_noised = noisedNlogN[:, dim:dim + dim ** 2].reshape((25,dim, dim))
-    mean = np.mean(noisedNlogN, axis=0)
-    print(np.round(mean,2), np.round(np.std(noisedNlogN, axis=0, ddof=1), 2))
-    print("noisedNlogN reduced percentages: ", np.mean(noisedNlogN < 2e-16, axis=0))
-
-    ax[1].legend()
-    #ax[1].set_ylim((-0.1, 6.0))
-
-    plt.savefig("graphics/real_partition_estimation_boxplots.pdf", format="pdf", bbox_inches="tight")
-
+    plt.savefig("graphics/non_parametric_periodogram.pdf", format="pdf", bbox_inches="tight")
     plt.show()
-
