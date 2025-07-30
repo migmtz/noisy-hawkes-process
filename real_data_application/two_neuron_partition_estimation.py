@@ -40,8 +40,8 @@ def unnoised_job(it, periodo, max_time):
 if __name__ == "__main__":
     df = pd.read_csv('spk_mouse22.csv', sep=',', header=0, index_col=0)
     #print(df.values)
-    which="unnoised"
-    if which not in ['noised', 'unnoised' or 'reduced']:
+    which = 'noised'
+    if which not in ['noised', 'unnoised', 'reduced']:
         raise ValueError("Choose a valid model among: 'noised', 'unnoised' or 'reduced'")
 
     max_time = 725
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     print("|" + "-"*partitioned_total + "|")
     print("|", end="")
     start_time = time.time()
-    if which == "full":
+    if which == "noised":
         text = ""
         with Pool(4) as p:
             estimations = np.array(
