@@ -34,8 +34,8 @@ if __name__ == "__main__":
     # Parameters
     mu = np.array([[1.0],
                    [1.0]])
-    alpha = np.array([[0.0, 0.0],
-                      [0.4, 0.4]])
+    alpha = np.array([[0.5, 0.0],
+                      [0.4, 0.0]])
     beta = np.array([[1.0],
                      [1.3]])
     noise = 0.5
