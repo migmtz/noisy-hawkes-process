@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.linalg import inv, det
 import finufft
+from scipy import stats
+from scipy.optimize import curve_fit
 
 
 #############
@@ -444,3 +446,94 @@ def estimate_spectral_density(parasited_times_list, max_time, max_freq=15.0):
                     parasited_times_list], axis=0)
 
     return x_freq[K+1:], IT_x[K+1:]
+
+
+
+#### Smooth periodogram
+
+
+def func(x, a, b, c):
+    return (a ** 2) / (b ** 2 + (2 * np.pi * x) ** 2) + c ** 2
+
+
+def moving_average(a, n=3):
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+
+def smooth_periodogram(parasited_times_list, max_time, max_freq=10.0, smooth_parameter=25, epsilon=0.01):
+
+    K = int(np.ceil(max_freq * max_time))
+    x_freq = np.arange(-K, K + 1) / max_time
+
+    IT_x = np.mean([fast_multi_periodogram_window(parasited_times, max_time, max_freq).real.squeeze() for parasited_times in
+                    parasited_times_list], axis=0)
+
+    smooth_window = K // smooth_parameter
+    smooth_rolling_centered = []
+    general_weights = np.array([stats.binom.pmf(i, 2 * smooth_window, 0.5) for i in range(2 * smooth_window + 1)])
+    for i in range(0, len(IT_x)):
+
+        aux = IT_x[max(i - smooth_window, 0): min(i + smooth_window, len(IT_x)) + 1]
+        if i < smooth_window:
+            weights = general_weights[smooth_window - i:] / stats.binom.cdf(smooth_window + i, 2 * smooth_window, 0.5)
+        elif i >= len(IT_x) - smooth_window - 1:
+            weights = general_weights[(smooth_window + i - len(IT_x)) + 1:] / stats.binom.cdf((smooth_window - i + len(IT_x) - 1),
+                                                                                      2 * smooth_window, 0.5)
+            weights = np.flip(weights)
+        else:
+            weights = general_weights
+
+        smooth_rolling_centered += [np.average(aux, weights=weights)]
+
+    popt, _ = curve_fit(func, x_freq[K + 1:], smooth_rolling_centered[K + 1:])
+    a, b, c = popt
+    est_max_freq = np.abs(b) * np.sqrt(1 / epsilon - 1) / (2 * np.pi)
+
+    final_K = int(np.ceil(est_max_freq * max_time))
+
+    return x_freq, smooth_rolling_centered, popt, est_max_freq, final_K, IT_x[K+1:K+1+final_K]
+
+
+def adaptive_periodogram(parasited_times_list, max_time, max_freq=10.0, smooth_parameter=25, epsilon=0.01):
+    dim = int(np.max(parasited_times_list[0][:, 1]))
+    K = int(np.ceil(max_freq * max_time))
+    x_freq = np.arange(-K, K + 1) / max_time
+
+    IT_x = np.mean([fast_multi_periodogram_window(parasited_times, max_time, max_freq).real for parasited_times in
+                    parasited_times_list], axis=0)
+
+    smooth_window = K // smooth_parameter
+    general_weights = np.array([stats.binom.pmf(i, 2 * smooth_window, 0.5) for i in range(2 * smooth_window + 1)])
+    est_max_freq = []
+
+    for k in range(dim):
+        smooth_rolling_centered = []
+        aux_periodogram = IT_x[:, k, k]
+        for i in range(0, len(IT_x)):
+
+            aux = aux_periodogram[max(i - smooth_window, 0): min(i + smooth_window, len(IT_x)) + 1]
+            if i < smooth_window:
+                weights = general_weights[smooth_window - i:] / stats.binom.cdf(smooth_window + i, 2 * smooth_window, 0.5)
+            elif i >= len(IT_x) - smooth_window - 1:
+                weights = general_weights[(smooth_window + i - len(IT_x)) + 1:] / stats.binom.cdf((smooth_window - i + len(IT_x) - 1),
+                                                                                          2 * smooth_window, 0.5)
+                weights = np.flip(weights)
+            else:
+                weights = general_weights
+
+            smooth_rolling_centered += [np.average(aux, weights=weights)]
+
+        popt, _ = curve_fit(func, x_freq[K + 1:], smooth_rolling_centered[K + 1:])
+        a, b, c = popt
+        est_max_freq += [np.abs(b) * np.sqrt(1 / epsilon - 1) / (2 * np.pi)]
+
+    print(est_max_freq)
+    est_max_freq = np.max(est_max_freq)
+    final_K = int(np.ceil(est_max_freq * max_time))
+
+    adapted_periodogram = np.mean([fast_multi_periodogram_window(parasited_times, max_time, est_max_freq) for parasited_times in
+                    parasited_times_list], axis=0)
+
+    return adapted_periodogram[final_K+1:]
