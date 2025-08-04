@@ -3,53 +3,9 @@ from class_and_func.spectral_functions import spectral_w_mask, fast_multi_period
 import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
-from scipy import stats
-from scipy.optimize import curve_fit
+from class_and_func.spectral_functions import func, smooth_periodogram
 
 sns.set_theme()
-
-
-def func(x, a, b, c):
-    return (a ** 2) / (b ** 2 + (2 * np.pi * x) ** 2) + c ** 2
-
-
-def moving_average(a, n=3):
-    ret = np.cumsum(a, dtype=float)
-    ret[n:] = ret[n:] - ret[:-n]
-    return ret[n - 1:] / n
-
-
-def estimate_spectral_density(parasited_times_list, max_time, max_freq=2.0, smooth_parameter=25, epsilon=0.01):
-    K = int(np.ceil(max_freq * max_time))
-    x_freq = np.arange(-K, K + 1) / max_time
-
-    IT_x = np.mean([fast_multi_periodogram_window(parasited_times, max_time, max_freq).real.squeeze() for parasited_times in
-                    parasited_times_list], axis=0)
-
-    smooth_window = K // smooth_parameter
-    smooth_rolling_centered = []
-    general_weights = np.array([stats.binom.pmf(i, 2 * smooth_window, 0.5) for i in range(2 * smooth_window + 1)])
-    for i in range(0, len(IT_x)):
-
-        aux = IT_x[max(i - smooth_window, 0): min(i + smooth_window, len(IT_x)) + 1]
-        if i < smooth_window:
-            weights = general_weights[smooth_window - i:] / stats.binom.cdf(smooth_window + i, 2 * smooth_window, 0.5)
-        elif i >= len(IT_x) - smooth_window - 1:
-            weights = general_weights[(smooth_window + i - len(IT_x)) + 1:] / stats.binom.cdf((smooth_window - i + len(IT_x) - 1),
-                                                                                      2 * smooth_window, 0.5)
-            weights = np.flip(weights)
-        else:
-            weights = general_weights
-
-        smooth_rolling_centered += [np.average(aux, weights=weights)]
-
-    popt, _ = curve_fit(func, x_freq[K + 1:], smooth_rolling_centered[K + 1:])
-    a, b, c = popt
-    est_max_freq = np.abs(b) * np.sqrt(1 / epsilon - 1) / (2 * np.pi)
-
-    final_K = int(np.ceil(est_max_freq * max_time))
-
-    return x_freq, smooth_rolling_centered, popt, est_max_freq, final_K, IT_x[K+1:K+1+final_K]
 
 
 if __name__ == "__main__":
@@ -84,7 +40,7 @@ if __name__ == "__main__":
         idx = np.argsort(pp_times[1:-1] + hp_times, axis=0)[:, 0]
         parasited_times_list += [np.array(pp_times[1:-1] + hp_times)[idx]]
 
-    x_freq, smooth_periodogram, popt, est_max_freq, final_K, final_ITx = estimate_spectral_density(parasited_times_list, max_time)
+    x_freq, smooth_periodogram, popt, est_max_freq, final_K, final_ITx = smooth_periodogram(parasited_times_list, max_time)
     f_x = np.array([spectral_w_mask((mu, alpha, beta, noise), x_0)[0] for x_0 in x_freq])
     K = int((len(x_freq) - 1)/2)
 
